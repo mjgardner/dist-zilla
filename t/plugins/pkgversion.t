@@ -21,6 +21,12 @@ package DZT::TP2;
 1;
 ';
 
+my $script = '
+#!/usr/bin/perl
+
+print "hello world\n";
+';
+
 my $script_pkg = '
 #!/usr/bin/perl
 
@@ -33,8 +39,9 @@ my $tzil = Dist::Zilla::Tester->from_config(
     add_files => {
       'source/lib/DZT/TP1.pm'    => $two_packages,
       'source/lib/DZT/WVer.pm'   => $with_version,
-      'source/bin/script.pl'     => $script_pkg,
+      'source/bin/script_pkg.pl' => $script_pkg,
       'source/bin/script_ver.pl' => $script_pkg . "our \$VERSION = 1.234;\n",
+      'source/bin/script.pl'     => $script,
       'source/dist.ini' => simple_ini('GatherDir', 'PkgVersion', 'ExecDir'),
     },
   },
@@ -69,12 +76,22 @@ unlike(
   "*not* added to DZT::WVer; we have one already",
 );
 
-my $dzt_script = $tzil->slurp_file('build/bin/script.pl');
+my $dzt_script_pkg = $tzil->slurp_file('build/bin/script_pkg.pl');
 like(
-    $dzt_script,
+    $dzt_script_pkg,
     qr{^\s*\$\QDZT::Script::VERSION = '0.001';\E$}m,
     "added version to DZT::Script",
 );
+
+TODO: {
+    local $TODO = 'only scanning for packages right now';
+    my $dzt_script = $tzil->slurp_file('build/bin/script.pl');
+    like(
+        $dzt_script,
+        qr{^\s*\$\QDZT::Script::VERSION = '0.001';\E$}m,
+        "added version to plain script",
+    );
+};
 
 my $script_wver = $tzil->slurp_file('build/bin/script_ver.pl');
 unlike(
